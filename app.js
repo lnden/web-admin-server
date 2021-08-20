@@ -5,7 +5,8 @@ const json = require('koa-json')
 const onerror = require('koa-onerror')
 const bodyparser = require('koa-bodyparser')
 const logger = require('koa-logger')
-
+const log4js = require('./utils/log4')
+ 
 const index = require('./routes/index')
 const users = require('./routes/users')
 
@@ -24,12 +25,15 @@ app.use(views(__dirname + '/views', {
   extension: 'pug'
 }))
 
+// 定义一个错误测试log4js
+// app.use(() => {
+//   ctx.body = 'below on error'
+// })
+
 // logger
 app.use(async (ctx, next) => {
-  const start = new Date()
   await next()
-  const ms = new Date() - start
-  console.log(`${ctx.method} ${ctx.url} - ${ms}ms`)
+  log4js.info(`log ouput`)
 })
 
 // routes
@@ -39,6 +43,7 @@ app.use(users.routes(), users.allowedMethods())
 // error-handling
 app.on('error', (err, ctx) => {
   console.error('server error', err, ctx)
+  // log4js.error(err)
 });
 
 module.exports = app
