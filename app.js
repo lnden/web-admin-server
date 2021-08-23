@@ -7,7 +7,9 @@ const onerror = require('koa-onerror')
 const bodyparser = require('koa-bodyparser')
 const logger = require('koa-logger')
 const log4js = require('./utils/log4')
- 
+const koajwt = require('koa-jwt') 
+const util = require('./utils/util')
+
 require('./conf/db')
 
 const users = require('./routes/users')
@@ -34,12 +36,25 @@ app.use(views(__dirname + '/views', {
 
 // logger
 app.use(async (ctx, next) => {
-  await next()
   log4js.info(`get params: ${JSON.stringify(ctx.request.query)}`)
   log4js.info(`post params: ${JSON.stringify(ctx.request.body)}`)
+  await next().catch((error) => {
+    if (error.status == '401') {
+      ctx.status = 200
+      ctx.body = util.fail('Token认证失败', util.CODE.AUTH_ERROR)
+    } else {
+      throw error
+    }
+  })
 })
 
-router.prefix('/api')
+app.use(koajwt({
+  secret: 'imooc'
+}).unless({
+  path: [/^\/api\/users\/login/]
+}))
+
+router.prefix('/api') 
 router.use(users.routes(), users.allowedMethods())
 // routes
 app.use(users.routes(), users.allowedMethods())
