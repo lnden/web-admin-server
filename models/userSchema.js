@@ -8,7 +8,7 @@ const userSchema = mongoose.Schema({
   'mobile': String, // 手机号
   'sex': Number, // 性别 0：男 1：女
   'deptId': [], // 部门
-  'jop': String, // 岗位
+  'job': String, // 岗位
   'state': {
     type: Number,
     default: 1

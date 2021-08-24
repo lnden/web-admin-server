@@ -1,7 +1,9 @@
 const router = require('koa-router')()
 const User =  require('../models/userSchema')
+const Counter = require('../models/counterSchema')
 const util = require('../utils/util')
 const jwt = require('jsonwebtoken')
+const md5 = require('md5')
 
 router.prefix('/users')
 
@@ -22,7 +24,7 @@ router.post('/login', async (ctx, next) => {
     const data = res._doc
     const token = jwt.sign({
       data
-     }, 'imooc', { expiresIn: 30 })
+     }, 'imooc', { expiresIn: '1h' })
 
     if (res) {
       data.token = token
@@ -39,7 +41,6 @@ router.post('/login', async (ctx, next) => {
 router.get('/list', async (ctx) => {
   const { userId, userName, state } = ctx.request.query
   const { page, skipIndex } = util.pager(ctx.request.query)
-  console.log(page, skipIndex)
   let params = {}
   if (userId) params.userId = userId
   if (userName) params.userName = userName
@@ -61,6 +62,68 @@ router.get('/list', async (ctx) => {
     })
   } catch (error) {
     ctx.body = util.fail(`查询异常： ${error.stack}`)
+  }
+})
+
+// 用户删除/批量删除
+router.post('/delete', async (ctx) => {
+  // 待删除的用户ID
+  const { userIds } = ctx.request.body
+  // User.updateMany({userId: ['10001']}, { state:2 })
+  // User.updateMany({ $or: [{ userId: 10001 }, { userId: 10002 }] })
+  const res = await User.updateMany({ userId: { $in: userIds }}, { state: 2 })
+  if (res.nModified) {
+    ctx.body = util.success(res, `共删除成功${res.nModified}条`)
+    return
+  }
+  ctx.body = util.fail('删除失败')
+})
+
+// 用户新增/编辑
+router.post('/operate', async (ctx) => {
+  const { userId, userName, userEmail, job, mobile, state, roleList, deptId, action } = ctx.request.body 
+  if (action == 'create') {
+    if (!userName || !userEmail || !deptId) {
+      ctx.body = util.fail('参数错误', util.CODE.PARM_ERROR)
+      return
+    }
+    const res = await User.findOne({$or: [ { userName }, { userEmail } ]}, '_id userName userEmail')
+    if(res) {
+      ctx.body = util.fail(`系统检测到有重复的用户，信息如下：${res.userName} - ${res.userEmail}`)
+    } else {
+      // 每次查找用户ID是userId, 自增长 +1
+      const doc = await Counter.findOneAndUpdate({ _id: 'userId' }, { $inc: { sequence_value: 1 } }, { new: true })
+      try {
+        const user = new User({
+          userId: doc.sequence_value,
+          userName,
+          userPwd: md5('123456'),
+          userEmail,
+          role: 1, // 默认普通用户
+          roleList,
+          job,
+          state,
+          deptId,
+          mobile
+        })
+        user.save()
+        ctx.body = util.success(true, '用户创建成功')
+      } catch (error) {
+        ctx.body = util.fail(error.stack, '用户创建失败')
+      }
+    }
+  } else {
+    if (!deptId) {
+      ctx.body = util.fail('部门不能为空', util.CODE.PARM_ERROR)
+      return
+    }
+
+    try {
+      const res = await User.findOneAndUpdate({ userId }, { job, mobile, state, roleList,deptId})
+      ctx.body = util.success(true, '更新成功')
+    } catch (error) {
+      ctx.body = util.fail(res, '更新失败')
+    }
   }
 })
 
