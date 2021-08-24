@@ -13,6 +13,7 @@ const util = require('./utils/util')
 require('./conf/db')
 
 const users = require('./routes/users')
+const menus = require('./routes/menus')
 
 // error handler
 onerror(app)
@@ -54,10 +55,12 @@ app.use(koajwt({
   path: [/^\/api\/users\/login/]
 }))
 
-router.prefix('/api') 
-router.use(users.routes(), users.allowedMethods())
+router.prefix('/api')
 // routes
-app.use(users.routes(), users.allowedMethods())
+router.use(users.routes(), users.allowedMethods())
+router.use(menus.routes(), menus.allowedMethods())
+
+app.use(router.routes(), router.allowedMethods())
 
 // error-handling
 app.on('error', (err, ctx) => {
