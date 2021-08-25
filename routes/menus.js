@@ -32,7 +32,7 @@ function getTreeMenu(menuList, id, list) {
      getTreeMenu(menuList, item._id, item.children)
      if (item.children.length == 0) {
        delete item.children
-     } else if (item.children[0].length > 0 && item.children[0].menuType == 2) {
+     } else if (item.children.length > 0 && item.children[0].menuType == 2) {
        // 快速区分按钮和菜单， 用于后期做菜单按钮权限控制
        item.action = item.children
       //  delete item.children

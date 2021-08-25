@@ -1,7 +1,7 @@
 const mongoose = require('mongoose')
 
 const menuSchema = mongoose.Schema({
-  menyType: Number, // 菜单类型
+  menuType: Number, // 菜单类型
   menuName: String, // 菜单名称
   menuCode: String, // 权限标识
   path: String, // 路由地址
