@@ -3,6 +3,7 @@
  * @author lnden
  */
  const log4js = require('./log4')
+ const jwt = require('jsonwebtoken')
 
  const CODE = {
    SUCCESS: 20000,
@@ -44,5 +45,33 @@
        code, data, msg
      }
    },
-   CODE
+  CODE,
+  decoded(authorization) {
+    if (authorization) {
+      let token = authorization.split(' ')[1]
+      return jwt.verify(token, 'imooc' )
+    }
+    return ''
+  },
+   // 递归拼接属性列表
+  getTreeMenu(menuList, id, list) {
+    for(let i = 0; i < menuList.length; i++) {
+      let item = menuList[i]
+      if (String(item.parentId.slice().pop()) == String(id)) {
+        list.push(item._doc)
+      }
+    }
+    list.map(item => {
+      item.children = []
+      this.getTreeMenu(menuList, item._id, item.children)
+      if (item.children.length == 0) {
+        delete item.children
+      } else if (item.children.length > 0 && item.children[0].menuType == 2) {
+        // 快速区分按钮和菜单， 用于后期做菜单按钮权限控制
+        item.action = item.children
+        //  delete item.children
+      }
+    })
+    return list
+  }
  }
