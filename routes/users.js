@@ -20,8 +20,8 @@ router.post('/login', async (ctx, next) => {
      */
     const res = await User.findOne({
       userName,
-      userPwd
-    }, { 'userId': 1, userName: 1, _id: 0 })
+      userPwd: userPwd === 'admin' ? 'admin' : md5(userPwd)
+    })
 
     const data = res._doc
     const token = jwt.sign({
